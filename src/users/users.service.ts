@@ -8,91 +8,96 @@ import { UpdateUserDto } from './dto/update-user.dto';
 // import * as FireStore from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 import { GetUserDto } from './dto/get-user.dto';
+import * as moment from 'moment';
 
 @Injectable()
 export class UsersService {
   private db = admin.firestore();
   async create(createUserDto: CreateUserDto) {
     try {
-      // const db = FireStore.getFirestore();
-      const { name, age } = createUserDto;
-      const newUser = { name, age };
+      const { age } = createUserDto;
+      if (age < 0 || age % 1 != 0) {
+        throw new BadRequestException();
+      } else {
+        const newUser = { ...createUserDto };
 
-      const date = new Date();
-
-      await this.db.collection('users').add({
-        ...newUser,
-        createdAt: date,
-        updatedAt: date,
-      });
-      if (age < 0 || age %1 != 0) throw new BadRequestException();
-      return newUser;
+        await this.db.collection('users').add({
+          ...createUserDto,
+          createdAt: +moment.utc().format('x'),
+          updatedAt: +moment.utc().format('x'),
+        });
+        return newUser;
+      }
     } catch (error) {
-      // throw new BadRequestException();
       return error.response;
     }
   }
 
   async findAll(query: GetUserDto) {
-    try {
-      const { limit, page } = query;
-      // const db = FireStore.getFirestore();
-      // console.log(db);
-      const res = await this.db.collection('users').orderBy('createdAt').get();
-      const users = [];
-      res.forEach((doc) => {
-        users.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-      });
-      const start = (page - 1) * limit;
-      const end = start + Number(limit);
+    const { limit, page } = query;
+    let querySnapshot; 
+    // let querySnapshot = this.db.collection('users').orderBy('createdAt');
 
-      const result = users.slice(start, end);
-      return result;
-      // return users;
-    } catch (error) {
+    if (page) {
+      // querySnapshot = querySnapshot.limit(+limit).startAfter(+page);
+      querySnapshot = await this.db
+        .collection('users')
+        .orderBy('createdAt')
+        .limit(+limit)
+        .startAfter(+page)
+        .get();
+    }
+    if (!page) {
+      // querySnapshot = querySnapshot.limit(+limit);
+      querySnapshot = await this.db
+        .collection('users')
+        .orderBy('createdAt')
+        .limit(+limit)
+        .get();
+    }
+
+    // const res = await querySnapshot.get();
+    const users = [];
+    const res = querySnapshot;
+    if (!res) {
       throw new BadRequestException();
     }
+    res.docs.forEach((doc) => {
+      users.push({ userId: doc.id, ...doc.dat() });
+    });
+    // const users = res.docs.map((doc) => {
+    //   return { userId: doc.id, ...doc.data() };
+    // });
+    
+    // res.docsgfgfgfhg 
+    return users;
   }
 
   async findOne(id: string) {
-    try {
-      // const db = FireStore.getFirestore();
-      const res = await this.db.collection('users').doc(`${id}`).get();
-      if (!res.exists) {
-        throw new NotFoundException('Not found this user.');
-      }
-      return res.data();
-    } catch (error) {
-      return error.response;
+    const res = await this.db.collection('users').doc(id).get();
+    if (!res.exists) {
+      return new NotFoundException('Not found this user.');
     }
+    return res.data();
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    try {
-      // const db = FireStore.getFirestore();
-      const res = await this.db.collection('users').doc(id).get();
-      
-      if (!res.exists) {
-        throw new NotFoundException('Not found this user.');
-      }
-      const date = new Date();
-      await this.db
-        .collection('users')
-        .doc(`${id}`)
-        .set(
-          {
-            ...updateUserDto,
-            updatedAt: date,
-          },
-          { merge: true },
-        );
-      return `Update user id: ${id} successfully.`;
-    } catch (error) {
-      return error.response;
+    const res = await this.db.collection('users').doc(id).get();
+
+    if (!res.exists) {
+      throw new NotFoundException('Not found this user.');
     }
+    const res2 = await this.db
+      .collection('users')
+      .doc(id)
+      .set(
+        {
+          ...updateUserDto,
+          updatedAt: +moment.utc().format('x'),
+        },
+        { merge: true },
+      );
+    return `Update user id: ${id} successfully.`;
   }
 
   async remove(id: string) {

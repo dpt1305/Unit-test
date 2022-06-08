@@ -1,17 +1,19 @@
 import { UsersController } from './users/users.controller';
 import { UpdateUserDto } from './users/dto/update-user.dto';
-import { CreateUserDto } from './users/dto/create-user.dto';
+import { CreateUserDto, UserGender } from './users/dto/create-user.dto';
 import { UsersService } from './users/users.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as admin from 'firebase-admin';
 import { BadRequestException } from '@nestjs/common';
+import { MaxLength } from 'class-validator';
 
 const mockId = 'alan';
 const docData = {
   name: 'test data',
   age: 15,
-  createdAt: 'Jun 6, 2022',
-  updatedAt: 'Jun 6, 2022',
+  gender: 'Male',
+  createdAt: 1654674963954,
+  updatedAt: 1654674963954,
 };
 const arrayData = [docData, docData, docData];
 
@@ -26,6 +28,9 @@ const mockArrayResult = {
   id: mockId,
   data: () => arrayData,
   forEach: jest.fn(),
+  docs: jest.fn(() => ({
+    forEach: jest.fn(() => Promise.resolve(mockArrayResult)),
+  })),
 };
 const notExistResult = {
   exists: false,
@@ -33,17 +38,11 @@ const notExistResult = {
   data: () => null,
   forEach: jest.fn(),
 };
-
+const mockedGetLimit = {
+  get: jest.fn(() => Promise.resolve(arrayData)),
+};
 const mockedSet = {
   set: jest.fn(),
-  // set: jest.fn((object, merge) => {
-  //   if(merge.merge) {
-  //     return {
-  //       ...docData,
-  //       ...object,
-  //     };
-  //   }
-  // }),
 };
 const mockedGet = {
   get: jest.fn(() => Promise.resolve(docResult)),
@@ -59,6 +58,12 @@ jest.mock('firebase-admin', () => ({
             })),
           })),
         })),
+        limit: jest.fn(() => ({
+          get: mockedGetLimit.get,
+          startAfter: jest.fn(() => ({
+            get: mockedGetLimit.get,
+          }))
+        }))
       })),
       doc: jest.fn((param) => ({
         // get: jest.fn(),
@@ -94,6 +99,7 @@ jest.mock('firebase-admin', () => ({
         })),
         get: mockedGet.get,
       })),
+      limit: jest.fn(() => mockedGetLimit.get),
     })),
   })),
   credential: {
@@ -126,7 +132,7 @@ describe('UserService', () => {
     it('should return error', async () => {
       mockedGet.get.mockResolvedValueOnce(notExistResult);
       const res = await usersService.findOne('a');
-      expect(res.statusCode).toBe(404);
+      expect(res.status).toBe(404);
     });
     it('it should return docData', async () => {
       // mockedGet.get.mockResolvedValueOnce(docResult);
@@ -139,32 +145,42 @@ describe('UserService', () => {
       const mockResult = {
         name: 'string',
         age: 0,
+        gender: 'Male',
       };
       const spy = jest.spyOn(usersService, 'create');
       const result = await usersService.create({
         name: 'string',
         age: 0,
+        gender: UserGender.Male,
       });
       expect(spy).toHaveBeenCalled();
       expect(result).toEqual(mockResult);
     });
     it('should be error when pass age < 0', async () => {
+      // mockedGet.get.mockResolvedValueOnce(docResult);
+
       const result2 = await usersService.create({
         name: 'string',
         age: -1,
+        gender: UserGender.Male,
       });
+      // console.log(result2);
       expect(result2.statusCode).toBe(400);
     });
   });
   describe('update', () => {
-    it('should throw NotFoundException if id incorrect', async () => {
-      mockedGet.get.mockResolvedValueOnce(notExistResult);
-      const res = await usersService.update('aan', { age: 13 });
-      expect(res.statusCode).toBe(404);
-    });
+    // it('should throw NotFoundException if id incorrect', async () => {
+    //   mockedGet.get.mockResolvedValueOnce(notExistResult);
+    //   const res = await usersService.update('aan', { age: 13 });
+    //   expect(res.statusCode).toBe(404);
+    // });
     it('update successfully', async () => {
-      // mockedGet.get.mockReturnValueOnce(docResult);
-      const res = await usersService.update('alan', { age: 13 });
+      mockedGet.get.mockResolvedValueOnce(docResult);
+      const res = await usersService.update('alan', {
+        age: 13,
+        name: 'tung',
+        gender: UserGender.Male,
+      });
       expect(res).toBe('Update user id: alan successfully.');
     });
   });
@@ -176,18 +192,15 @@ describe('UserService', () => {
     it('should throw not found user', async () => {
       mockedGet.get.mockResolvedValueOnce(notExistResult);
       const res = await usersService.remove('abc');
-      expect(res.error).toBe('Not Found');
+      expect(res.statusCode).toBe(404);
     });
   });
-  // describe('findAll', () => {
-  //   it('should return an array', async () => {
-  //     mockedGet.get.mockResolvedValueOnce(mockArrayResult);
-  //     const res = await usersService.findAll({ page: 1, limit: 1 });
-  //     // expect(res).toEqual(
-  //     //   expect.arrayContaining([
-  //     //     expect.objectContaining({})
-  //     //   ])
-  //     // );
-  //   });
-  // });
+  describe('findAll', () => {
+    it('should return an array', async () => {
+      // mockedGetLimit.get.mockResolvedValueOnce(mockArrayResult);
+      // mockedGet.get.mockResolvedValueOnce(mockArrayResult);
+      const res = await usersService.findAll({ page: 1, limit: 1 });
+      expect(res).toContain('name');
+    });
+  });
 });
