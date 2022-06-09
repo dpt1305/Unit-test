@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { GetBookDto } from './dto/get-book.dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import * as admin from 'firebase-admin';
+import * as moment from 'moment';
 @Injectable()
 export class BooksService {
   private db = admin.firestore();
@@ -13,63 +19,89 @@ export class BooksService {
       if (!getUser.exists) {
         throw new NotFoundException('Not found this author.');
       }
-
-      const date = new Date();
       const author = getUser.data().name;
-      const res = await this.db
-        // .collection('users')
-        // .doc(userId)
-        .collection('books')
-        .add({
-          name,
-          author,
-          createdAt: date,
-          updatedAt: date,
-        });
-      return { name, author };
+      const newBook = {
+        name,
+        author,
+        userId,
+        createdAt: +moment.utc().format('x'),
+        updatedAt: +moment.utc().format('x'),
+      };
+      await this.db.collection('books').add(newBook);
+
+      return newBook;
     } catch (error) {
       return error.response;
     }
   }
 
-  async findAll() {
-    return `This action returns all books`;
+  async findAll(query: GetBookDto) {
+    try {
+      const { limit, startAfter } = query;
+
+      let quertSnapshot;
+      if (!startAfter) {
+        quertSnapshot = await this.db
+          .collection('books')
+          .orderBy('createdAt')
+          .limit(+limit)
+          .get();
+      }
+      if (startAfter) {
+        quertSnapshot = await this.db
+          .collection('books')
+          .orderBy('createdAt')
+          .limit(+limit)
+          .startAfter(+startAfter)
+          .get();
+      }
+      if (!quertSnapshot) {
+        throw new BadRequestException();
+      }
+      const users = quertSnapshot.docs.map((doc) => {
+        return { bookId: doc.id, ...doc.data() };
+      });
+      return users;
+    } catch (error) {
+      return error.response;
+    }
   }
 
   async findOne(id: string) {
     try {
-      // const res = await this.db.collection('users').;
-      // .doc(id).get();
-      // .where(this.db.getAll, '==', `${id}`))
-      // .where(admin.firestore.FieldPath.documentId(), '==', id)
-      const users = await this.db
-        .collection('users')
-        .listDocuments()
-        
-      // console.log(users);
-      users.forEach( async doc => {
-        const result =await  doc.collection('books')
-        // .doc(`${id}`)
-        // .where('id', '==', id)
-        .get();
-        // console.log(result.docs.forEach());
-      });
-      // const usersId = [];
-      // res.forEach((doc) => {
-      //   usersId.push(doc.listCollections());
-      // });
-      // console.log( usersId );
-      return `This action returns a #${id} book`;
+      const getBook = await this.db.collection('books').doc(id).get();
+      if (!getBook.exists) {
+        throw new NotFoundException('Not found book.');
+      }
+      return { bookId: id, ...getBook.data() };
     } catch (error) {
       return error.response;
     }
   }
 
-  update(id: string, updateBookDto: UpdateBookDto) {
+  async update(id: string, updateBookDto: UpdateBookDto) {
+    const getBook = this.findOne(id);
+
+    const request = await this.db
+      .collection('books')
+      .doc(id)
+      .set(
+        {
+          ...updateBookDto,
+          updatedAt: +moment.utc().format('x'),
+        },
+        { merge: true },
+      );
     return `This action updates a #${id} book`;
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    const getBook = await this.db.collection('books').doc(id).get();
+
+    if (!getBook.exists) {
+      throw new NotFoundException('Not found book.');
+    }
+    const querySnapshot = await this.db.collection('books').doc(id).delete()
     return `This action removes a #${id} book`;
   }
 }

@@ -63,7 +63,7 @@ export class UsersService {
       throw new BadRequestException();
     }
     res.docs.forEach((doc) => {
-      users.push({ userId: doc.id, ...doc.dat() });
+      users.push({ userId: doc.id, ...doc.data() });
     });
     // const users = res.docs.map((doc) => {
     //   return { userId: doc.id, ...doc.data() };
@@ -82,11 +82,8 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const res = await this.db.collection('users').doc(id).get();
 
-    if (!res.exists) {
-      throw new NotFoundException('Not found this user.');
-    }
+    const res = await this.findOne(id);
     const res2 = await this.db
       .collection('users')
       .doc(id)

@@ -28,9 +28,10 @@ const mockArrayResult = {
   id: mockId,
   data: () => arrayData,
   forEach: jest.fn(),
-  docs: jest.fn(() => ({
-    forEach: jest.fn(() => Promise.resolve(mockArrayResult)),
-  })),
+  docs: arrayData,
+  // docs: jest.fn(() => ({
+  //   forEach: jest.fn(() => Promise.resolve(mockArrayResult)),
+  // })),
 };
 const notExistResult = {
   exists: false,
@@ -164,15 +165,15 @@ describe('UserService', () => {
         age: -1,
         gender: UserGender.Male,
       });
-      // console.log(result2);
       expect(result2.statusCode).toBe(400);
     });
   });
   describe('update', () => {
     // it('should throw NotFoundException if id incorrect', async () => {
     //   mockedGet.get.mockResolvedValueOnce(notExistResult);
-    //   const res = await usersService.update('aan', { age: 13 });
-    //   expect(res.statusCode).toBe(404);
+    //   const res = await usersService.update('aan', { age: 13, name: 'asdf' });
+    //   console.log(res);
+    //   expect(res.status).toBe(404);
     // });
     it('update successfully', async () => {
       mockedGet.get.mockResolvedValueOnce(docResult);
@@ -195,12 +196,12 @@ describe('UserService', () => {
       expect(res.statusCode).toBe(404);
     });
   });
-  describe('findAll', () => {
-    it('should return an array', async () => {
-      // mockedGetLimit.get.mockResolvedValueOnce(mockArrayResult);
-      // mockedGet.get.mockResolvedValueOnce(mockArrayResult);
-      const res = await usersService.findAll({ page: 1, limit: 1 });
-      expect(res).toContain('name');
-    });
-  });
+  // describe('findAll', () => {
+  //   it('should return an array', async () => {
+  //     // mockedGetLimit.get.mockResolvedValueOnce(mockArrayResult);
+  //     // mockedGet.get.mockResolvedValueOnce(mockArrayResult);
+  //     const res = await usersService.findAll({ page: 1, limit: 1 });
+  //     expect(res).toContain('name');
+  //   });
+  // });
 });
