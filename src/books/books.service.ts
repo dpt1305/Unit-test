@@ -55,9 +55,9 @@ export class BooksService {
           .startAfter(+startAfter)
           .get();
       }
-      if (!quertSnapshot) {
-        throw new BadRequestException();
-      }
+      // if (!quertSnapshot) {
+      //   throw new BadRequestException();
+      // }
       const users = quertSnapshot.docs.map((doc) => {
         return { bookId: doc.id, ...doc.data() };
       });
@@ -80,28 +80,39 @@ export class BooksService {
   }
 
   async update(id: string, updateBookDto: UpdateBookDto) {
-    const getBook = this.findOne(id);
+    try {
+      const getBook = await this.db.collection('books').doc(id).get();
 
-    const request = await this.db
-      .collection('books')
-      .doc(id)
-      .set(
-        {
-          ...updateBookDto,
-          updatedAt: +moment.utc().format('x'),
-        },
-        { merge: true },
-      );
-    return `This action updates a #${id} book`;
+      if (!getBook.exists) {
+        throw new NotFoundException('Not found book.');
+      }
+      const request = await this.db
+        .collection('books')
+        .doc(id)
+        .set(
+          {
+            ...updateBookDto,
+            updatedAt: +moment.utc().format('x'),
+          },
+          { merge: true },
+        );
+      return `This action updates a #${id} book`;
+    } catch (error) {
+      return error.response;
+    }
   }
 
   async remove(id: string) {
-    const getBook = await this.db.collection('books').doc(id).get();
+    try {
+      const getBook = await this.db.collection('books').doc(id).get();
 
-    if (!getBook.exists) {
-      throw new NotFoundException('Not found book.');
+      if (!getBook.exists) {
+        throw new NotFoundException('Not found book.');
+      }
+      const querySnapshot = await this.db.collection('books').doc(id).delete();
+      return `This action removes a #${id} book`;
+    } catch (error) {
+      return error.response;
     }
-    const querySnapshot = await this.db.collection('books').doc(id).delete()
-    return `This action removes a #${id} book`;
   }
 }

@@ -4,8 +4,6 @@ import { CreateUserDto, UserGender } from './users/dto/create-user.dto';
 import { UsersService } from './users/users.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as admin from 'firebase-admin';
-import { BadRequestException } from '@nestjs/common';
-import { MaxLength } from 'class-validator';
 
 const mockId = 'alan';
 const docData = {
@@ -133,7 +131,9 @@ describe('UserService', () => {
     it('should return error', async () => {
       mockedGet.get.mockResolvedValueOnce(notExistResult);
       const res = await usersService.findOne('a');
-      expect(res.status).toBe(404);
+      const result = res.status;
+
+      expect(result).toBe(404);
     });
     it('it should return docData', async () => {
       // mockedGet.get.mockResolvedValueOnce(docResult);
@@ -169,12 +169,6 @@ describe('UserService', () => {
     });
   });
   describe('update', () => {
-    // it('should throw NotFoundException if id incorrect', async () => {
-    //   mockedGet.get.mockResolvedValueOnce(notExistResult);
-    //   const res = await usersService.update('aan', { age: 13, name: 'asdf' });
-    //   console.log(res);
-    //   expect(res.status).toBe(404);
-    // });
     it('update successfully', async () => {
       mockedGet.get.mockResolvedValueOnce(docResult);
       const res = await usersService.update('alan', {
