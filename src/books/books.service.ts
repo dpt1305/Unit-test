@@ -1,3 +1,4 @@
+import { GetBookByIdDto } from './dto/get-book-by-id.dto';
 import { GetBookDto } from './dto/get-book.dto';
 import {
   Injectable,
@@ -8,6 +9,7 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import * as admin from 'firebase-admin';
 import * as moment from 'moment';
+import { QuerySnapshot } from '@google-cloud/firestore';
 @Injectable()
 export class BooksService {
   private db = admin.firestore();
@@ -58,10 +60,10 @@ export class BooksService {
       // if (!quertSnapshot) {
       //   throw new BadRequestException();
       // }
-      const users = quertSnapshot.docs.map((doc) => {
+      const books = quertSnapshot.docs.map((doc) => {
         return { bookId: doc.id, ...doc.data() };
       });
-      return users;
+      return books;
     } catch (error) {
       return error.response;
     }
@@ -114,5 +116,35 @@ export class BooksService {
     } catch (error) {
       return error.response;
     }
+  }
+  async findByUserId(id: string, getBookByIdDto: GetBookByIdDto) {
+    const { sort, limit, startAfter } = getBookByIdDto;
+    let querySnapshot;
+
+    const user = await this.db.collection('users').doc(id).get();
+    if (!user.exists) {
+      throw new NotFoundException('Not found this user.');
+    }
+    if(startAfter) {
+      querySnapshot = await this.db
+        .collection('books')
+        .orderBy('createdAt', sort)
+        .limit(+limit)
+        .where('userId', '==', id)
+        .startAfter(+startAfter)
+        .get();
+    }
+    if(!startAfter) {
+      querySnapshot = await this.db
+        .collection('books')
+        .orderBy('createdAt', sort)
+        .limit(+limit)
+        .where('userId', '==', id)
+        .get();
+    }
+    const books = querySnapshot.docs.map((doc) => {
+      return { bookId: doc.id, ...doc.data() };
+    });
+    return books;
   }
 }
