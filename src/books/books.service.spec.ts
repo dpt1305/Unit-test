@@ -3,6 +3,8 @@ import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 import * as admin from 'firebase-admin';
 import { mockGet } from 'firestore-jest-mock/mocks/firestore';
+import { SortType } from './dto/get-book-by-id.dto';
+import { NotFoundException } from '@nestjs/common';
 
 const mockId = 'alan';
 const userId = 'Psd1apFENrqrfKRpCYE6';
@@ -30,9 +32,11 @@ const mockArrayResult = {
   id: mockId,
   data: () => arrayData,
   forEach: jest.fn(),
-  docs: arrayData,
+  docs: {
+    map: jest.fn(() => arrayData),
+  },
   // docs: jest.fn(() => ({
-  //   forEach: jest.fn(() => Promise.resolve(mockArrayResult)),
+  //   map: () => arrayData,
   // })),
 };
 const notExistResult = {
@@ -43,6 +47,9 @@ const notExistResult = {
 };
 const mockedGetLimit = {
   get: jest.fn(() => Promise.resolve(arrayData)),
+};
+const mockedGetForMap = {
+  get: jest.fn(() => Promise.resolve(mockArrayResult)),
 };
 const mockedSet = {
   set: jest.fn(),
@@ -62,9 +69,15 @@ jest.mock('firebase-admin', () => ({
           })),
         })),
         limit: jest.fn(() => ({
-          get: mockedGetLimit.get,
+          get: mockedGetForMap.get,
           startAfter: jest.fn(() => ({
-            get: mockedGetLimit.get,
+            get: mockedGetForMap.get,
+          })),
+          where: jest.fn(() => ({
+            get: mockedGetForMap.get,
+            startAfter: jest.fn(() => ({
+              get: mockedGetForMap.get,
+            })),
           })),
         })),
       })),
@@ -134,14 +147,11 @@ describe('Book service', () => {
     it('should return error', async () => {
       mockedGet.get.mockResolvedValueOnce(notExistResult);
       const res = await booksService.findOne('a');
-      const result = res.statusCode;
 
-      expect(result).toBe(404);
+      expect(res.statusCode).toBe(404);
     });
     it('should return correctly', async () => {
-      let result = await booksService.findOne(mockId);
-      result = { userId: mockId, ...result };
-
+      const result = await booksService.findOne(mockId);
       expect(result).toEqual(docData);
     });
   });
@@ -184,8 +194,51 @@ describe('Book service', () => {
     });
   });
   describe('findAll', () => {
-    it('should return array of books', async () => {
-      
+    it('find with limit => should return array of books', async () => {
+      const result = await booksService.findAll({ limit: 2 });
+      expect(result).toEqual(arrayData);
     });
-  })
+    it('find with limit, startAfter => should return array of books', async () => {
+      const result = await booksService.findAll({
+        limit: 2,
+        startAfter: 12343534234,
+      });
+      expect(result).toEqual(arrayData);
+    });
+  });
+  describe('findByUserId', () => {
+    it('not found user => should return error', async () => {
+      mockedGet.get.mockResolvedValueOnce(notExistResult);
+      const res = await booksService.findByUserId('a', {
+        sort: SortType.ASC,
+        limit: 2,
+        startAfter: 0,
+      });
+
+      expect(res.statusCode).toBe(404);
+      // expect(res).toThrow(NotFoundException);
+      // await expect(res).rejects.toThrow(NotFoundException);
+
+      // expect(res.statusCode).toBe(404);
+      // expect(res).rejects.toThrow(
+      //   new NotFoundException('Not found this user.'),
+      // );
+    });
+    it('should return an array of book', async () => {
+      const res = await booksService.findByUserId('alan', {
+        sort: SortType.ASC,
+        limit: 2,
+        startAfter: 0,
+      });
+      expect(res).toEqual(arrayData);
+    });
+    it('should return an array of book', async () => {
+      const res = await booksService.findByUserId('alan', {
+        sort: SortType.ASC,
+        limit: 2,
+        startAfter: 123423543,
+      });
+      expect(res).toEqual(arrayData);
+    });
+  });
 });

@@ -26,7 +26,9 @@ const mockArrayResult = {
   id: mockId,
   data: () => arrayData,
   forEach: jest.fn(),
-  docs: arrayData,
+  docs: {
+    map: jest.fn(() => arrayData),
+  },
   // docs: jest.fn(() => ({
   //   forEach: jest.fn(() => Promise.resolve(mockArrayResult)),
   // })),
@@ -39,6 +41,9 @@ const notExistResult = {
 };
 const mockedGetLimit = {
   get: jest.fn(() => Promise.resolve(arrayData)),
+};
+const mockedGetForMap = {
+  get: jest.fn(() => Promise.resolve(mockArrayResult)),
 };
 const mockedSet = {
   set: jest.fn(),
@@ -58,11 +63,11 @@ jest.mock('firebase-admin', () => ({
           })),
         })),
         limit: jest.fn(() => ({
-          get: mockedGetLimit.get,
+          get: mockedGetForMap.get,
           startAfter: jest.fn(() => ({
-            get: mockedGetLimit.get,
-          }))
-        }))
+            get: mockedGetForMap.get,
+          })),
+        })),
       })),
       doc: jest.fn((param) => ({
         // get: jest.fn(),
@@ -190,12 +195,14 @@ describe('UserService', () => {
       expect(res.statusCode).toBe(404);
     });
   });
-  // describe('findAll', () => {
-  //   it('should return an array', async () => {
-  //     // mockedGetLimit.get.mockResolvedValueOnce(mockArrayResult);
-  //     // mockedGet.get.mockResolvedValueOnce(mockArrayResult);
-  //     const res = await usersService.findAll({ page: 1, limit: 1 });
-  //     expect(res).toContain('name');
-  //   });
-  // });
+  describe('findAll', () => {
+    it('pass limit => should return an array', async () => {
+      const res = await usersService.findAll({ page: 0, limit: 1 });
+      expect(res).toEqual(arrayData);
+    });
+    it('pass page + limit => should return an array', async () => {
+      const res = await usersService.findAll({ page: 2, limit: 1 });
+      expect(res).toEqual(arrayData);
+    });
+  });
 });

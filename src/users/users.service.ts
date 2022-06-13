@@ -35,11 +35,9 @@ export class UsersService {
 
   async findAll(query: GetUserDto) {
     const { limit, page } = query;
-    let querySnapshot; 
-    // let querySnapshot = this.db.collection('users').orderBy('createdAt');
+    let querySnapshot;
 
     if (page) {
-      // querySnapshot = querySnapshot.limit(+limit).startAfter(+page);
       querySnapshot = await this.db
         .collection('users')
         .orderBy('createdAt')
@@ -48,7 +46,6 @@ export class UsersService {
         .get();
     }
     if (!page) {
-      // querySnapshot = querySnapshot.limit(+limit);
       querySnapshot = await this.db
         .collection('users')
         .orderBy('createdAt')
@@ -56,20 +53,10 @@ export class UsersService {
         .get();
     }
 
-    // const res = await querySnapshot.get();
-    const users = [];
-    const res = querySnapshot;
-    if (!res) {
-      throw new BadRequestException();
-    }
-    res.docs.forEach((doc) => {
-      users.push({ userId: doc.id, ...doc.data() });
+    const users = querySnapshot.docs.map((doc) => {
+      return { userId: doc.id, ...doc.data() };
     });
-    // const users = res.docs.map((doc) => {
-    //   return { userId: doc.id, ...doc.data() };
-    // });
-    
-    // res.docsgfgfgfhg 
+
     return users;
   }
 
@@ -82,7 +69,6 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-
     const res = await this.findOne(id);
     const res2 = await this.db
       .collection('users')

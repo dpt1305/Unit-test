@@ -1,13 +1,25 @@
 import { GetBookByIdDto } from './dto/get-book-by-id.dto';
 import { GetBookDto } from './dto/get-book.dto';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseFilters,
+} from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { HttpExceptionFilter } from './../http-exception.filter';
 
 @ApiTags('Book')
 @Controller('books')
+@UseFilters(new HttpExceptionFilter())
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
@@ -42,5 +54,4 @@ export class BooksController {
   remove(@Param('id') id: string) {
     return this.booksService.remove(id);
   }
-
 }

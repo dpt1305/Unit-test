@@ -7,5 +7,5 @@ export class GetBookDto {
 
   @ApiProperty({ required: false })
   @IsNumber()
-  startAfter: number;
+  startAfter?: number;
 }

@@ -38,44 +38,62 @@ export class BooksService {
   }
 
   async findAll(query: GetBookDto) {
-    try {
-      const { limit, startAfter } = query;
+    const { limit, startAfter } = query;
 
-      let quertSnapshot;
-      if (!startAfter) {
-        quertSnapshot = await this.db
-          .collection('books')
-          .orderBy('createdAt')
-          .limit(+limit)
-          .get();
-      }
-      if (startAfter) {
-        quertSnapshot = await this.db
-          .collection('books')
-          .orderBy('createdAt')
-          .limit(+limit)
-          .startAfter(+startAfter)
-          .get();
-      }
-      // if (!quertSnapshot) {
-      //   throw new BadRequestException();
-      // }
-      const books = quertSnapshot.docs.map((doc) => {
-        return { bookId: doc.id, ...doc.data() };
-      });
-      return books;
-    } catch (error) {
-      return error.response;
+    let querySnapshot;
+    if (!startAfter) {
+      querySnapshot = await this.db
+        .collection('books')
+        .orderBy('createdAt')
+        .limit(+limit)
+        .get();
     }
-  }
+    if (startAfter) {
+      querySnapshot = await this.db
+        .collection('books')
+        .orderBy('createdAt')
+        .limit(+limit)
+        .startAfter(+startAfter)
+        .get();
+    }
 
+    // let querySnapshot = this.db.collection('books').orderBy('createdAt').limit(+limit);
+    const books = querySnapshot.docs.map((doc) => {
+      return { bookId: doc.id, ...doc.data() };
+    });
+    return books;
+
+    //# new way of Billy
+    // let bookRef = this.db.collection('books').orderBy('createdAt');
+    // if (startAfter) {
+    //   bookRef = bookRef.limit(+limit).startAfter(+startAfter);
+    // }
+
+    // if (!startAfter) {
+    //   bookRef = bookRef.limit(+limit);
+    // }
+
+    // const querySnapshot = await bookRef.get();
+
+    // const userDocs = await querySnapshot.docs;
+    // const users = [];
+    // const res = userDocs.forEach((doc) => {
+    //   users.push({ userId: doc.id, ...doc.data() });
+    //   // return { userId: doc.id, ...doc.data() };
+    // });
+    // return users;
+  }
+  // returnFromMapFunction(doc) {
+  //   return { userId: doc.id, ...doc.data() };
+  // }
   async findOne(id: string) {
     try {
       const getBook = await this.db.collection('books').doc(id).get();
       if (!getBook.exists) {
         throw new NotFoundException('Not found book.');
       }
-      return { bookId: id, ...getBook.data() };
+      const result = { bookId: id, ...getBook.data() };
+      return result;
     } catch (error) {
       return error.response;
     }
@@ -118,33 +136,37 @@ export class BooksService {
     }
   }
   async findByUserId(id: string, getBookByIdDto: GetBookByIdDto) {
-    const { sort, limit, startAfter } = getBookByIdDto;
-    let querySnapshot;
+    try {
+      const { sort, limit, startAfter } = getBookByIdDto;
+      let querySnapshot;
 
-    const user = await this.db.collection('users').doc(id).get();
-    if (!user.exists) {
-      throw new NotFoundException('Not found this user.');
+      const user = await this.db.collection('users').doc(id).get();
+      if (!user.exists) {
+        throw new NotFoundException('Not found this user.');
+      }
+      if (startAfter) {
+        querySnapshot = await this.db
+          .collection('books')
+          .orderBy('createdAt', sort)
+          .limit(+limit)
+          .where('userId', '==', id)
+          .startAfter(+startAfter)
+          .get();
+      }
+      if (!startAfter) {
+        querySnapshot = await this.db
+          .collection('books')
+          .orderBy('createdAt', sort)
+          .limit(+limit)
+          .where('userId', '==', id)
+          .get();
+      }
+      const books = querySnapshot.docs.map((doc) => {
+        return { bookId: doc.id, ...doc.data() };
+      });
+      return books;
+    } catch (error) {
+      return error.response;
     }
-    if(startAfter) {
-      querySnapshot = await this.db
-        .collection('books')
-        .orderBy('createdAt', sort)
-        .limit(+limit)
-        .where('userId', '==', id)
-        .startAfter(+startAfter)
-        .get();
-    }
-    if(!startAfter) {
-      querySnapshot = await this.db
-        .collection('books')
-        .orderBy('createdAt', sort)
-        .limit(+limit)
-        .where('userId', '==', id)
-        .get();
-    }
-    const books = querySnapshot.docs.map((doc) => {
-      return { bookId: doc.id, ...doc.data() };
-    });
-    return books;
   }
 }
