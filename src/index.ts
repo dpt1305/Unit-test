@@ -36,11 +36,12 @@ const createNestServer = async (expressInstance) => {
     new ExpressAdapter(expressInstance),
   );
   const config = new DocumentBuilder()
-  .setTitle('Cats example')
-  .setDescription('The cats API description')
-  .setVersion('1.0')
-  .addTag('Unit test')
-  .build();
+    .setTitle('Cats example')
+    .setDescription('The cats API description')
+    .setVersion('1.0')
+    .addTag('Unit test')
+    .addServer('https://us-central1-zporter-trial-1234.cloudfunctions.net/api/')
+    .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

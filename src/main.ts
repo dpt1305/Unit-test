@@ -23,6 +23,7 @@ async function bootstrap() {
     .setDescription('The cats API description')
     .setVersion('1.0')
     .addTag('Unit test')
+    .addServer('https://us-central1-zporter-trial-1234.cloudfunctions.net/api/')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
