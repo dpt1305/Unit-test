@@ -5,6 +5,10 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "main": "./dist/src/index.js",
+  "engines": {
+    "node": "16"
+  },
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
@@ -29,6 +33,7 @@
     "@nestjs/swagger": "^5.2.1",
     "class-validator": "^0.13.2",
     "firebase-admin": "^10.2.0",
+    "firebase-functions": "^3.21.2",
     "firestore-jest-mock": "^0.18.0",
     "moment": "^2.29.3",
     "reflect-metadata": "^0.1.13",

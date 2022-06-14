@@ -18,5 +18,9 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true
-  }
+  },
+  "compileOnSave": true,
+  "include": [
+    "src"
+, "test/users.service.spec.ts", "test/books.service.spec.ts", "functions/api.ts"  ]
 }

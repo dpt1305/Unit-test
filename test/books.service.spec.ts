@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BooksController } from './books.controller';
-import { BooksService } from './books.service';
+import { BooksController } from '../src/books/books.controller';
+import { BooksService } from '../src/books/books.service';
 import * as admin from 'firebase-admin';
 import { mockGet } from 'firestore-jest-mock/mocks/firestore';
-import { SortType } from './dto/get-book-by-id.dto';
+import { SortType } from '../src/books/dto/get-book-by-id.dto';
 import { NotFoundException } from '@nestjs/common';
 
 const mockId = 'alan';

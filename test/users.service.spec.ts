@@ -1,7 +1,7 @@
-import { UsersController } from './users/users.controller';
-import { UpdateUserDto } from './users/dto/update-user.dto';
-import { CreateUserDto, UserGender } from './users/dto/create-user.dto';
-import { UsersService } from './users/users.service';
+import { UsersController } from '../src/users/users.controller';
+import { UpdateUserDto } from '../src/users/dto/update-user.dto';
+import { CreateUserDto, UserGender } from '../src/users/dto/create-user.dto';
+import { UsersService } from '../src/users/users.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as admin from 'firebase-admin';
 
